@@ -1,9 +1,0 @@
-[submodule "repos/C2"]
-	path = repos/C2
-	url = https://github.com/alexztc/C2
-[submodule "repos/velosearch"]
-	path = repos/velosearch
-	url = https://github.com/Velosearch/velosearch
-[submodule "repos/LICO"]
-	path = repos/LICO
-	url = https://github.com/xianyuzhuruc/LICO
