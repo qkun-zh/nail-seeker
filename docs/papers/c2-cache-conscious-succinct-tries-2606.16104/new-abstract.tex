@@ -1,0 +1,25 @@
+\begin{OPabstract}
+  Succinct tries are powerful string dictionaries because of their low memory
+  footprint and fast query performance. However, existing succinct trie
+  implementations face two key challenges to spatial locality: 1) they incur
+  unnecessary cache misses during queries, especially during trie navigation
+  operations, and 2) they waste significant space when the data contains many
+  unary paths. We propose \csquared, a set of two techniques: $\text{C}_1$
+  introduces a more cache-friendly layout for the \bv underlying succinct tries,
+  and $\text{C}_2$ compresses redundant unary paths. We thoroughly redesign
+  three state-of-the-art succinct tries: FST, CoCo-trie, and Marisa, producing
+  $\texttt{C}^2$-FST, $\texttt{C}^2$-CoCo, and $\texttt{C}^2$-Marisa.
+  Experiments on six diverse datasets show that the \bvdesign optimization
+  improves query performance by \bvfstspeedup, \bvcocospeedup, and \bvmarisaspeedup, respectively,
+  compared to the original FST, CoCo-trie, and Marisa.  Furthermore, the
+  $\text{C}_2$ optimization achieves a \toplevelspacesavings smaller memory
+  footprint on average. The succinct tries optimized with both aspects of
+  $\texttt{C}^2$ achieve better space-time tradeoffs than their original
+  versions and other state-of-the-art succinct tries, while using significantly
+  less space than non-succinct tries like ART and C-ART.
+\end{OPabstract}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "edbt-paper-template-30-1"
+%%% End:

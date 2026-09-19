@@ -1,0 +1,11 @@
+# Rust build output
+/target/
+
+# Publisher PDFs stay local (copyrighted); converted .md carries the content
+*.pdf
+
+# arXiv source tarballs stay local; extracted tex dirs are committed
+*.tar.gz
+
+# Unused background papers stay local
+docs/papers/background/

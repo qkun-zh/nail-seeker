@@ -1,0 +1,203 @@
+\newcommand{\para}[1]{\smallskip\noindent\textbf{#1.}}
+\newcommand{\proc}{\texttt}
+\newcommand{\rankop}{\proc{rank}\xspace}
+\newcommand{\selectop}{\proc{select}\xspace}
+\newcommand{\selectopnospace}{\proc{select}}
+\newcommand{\rankopnospace}{\proc{rank}}
+\newcommand{\var}{\texttt}
+
+\iffalse
+\newcommand{\newrev}[1]{{\color{blue}{#1}}}
+\newcommand{\newmymarginpar}[1]{\marginpar{\sf \scriptsize \color{red}{#1} }}
+\newcommand{\newmymarginnote}[1]{\marginnote{\sf \scriptsize \color{red}{#1} }}
+\newcommand{\newnew}[1]{{\color{green!50!black}{#1}}}
+\fi
+
+\newcommand{\newrev}[1]{#1}
+\newcommand{\newmymarginpar}[1]{}
+\newcommand{\newmymarginnote}[1]{}
+\newcommand{\newnew}[1]{#1}
+
+\newcommand{\rev}[1]{#1}
+\newcommand{\mymarginpar}[1]{}
+\newcommand{\mymarginnote}[1]{}
+\newcommand{\new}[1]{#1}
+
+
+\definecolor{magenta4}{rgb}{0.5625,0,0.5625}
+\definecolor{green4}{rgb}{0,0.5625,0}
+\definecolor{orange4}{rgb}{0.98,0.31,0.09}
+\newcommand{\kepan}[1]{{ \textcolor{purple}{Kepan: {#1}}}}
+\newcommand{\helen}[1]{{ \textcolor{magenta4}{Helen: {#1}}}}
+\newcommand{\todo}[1]{{\textcolor{red}{TODO: {#1}}}}
+
+\newcommand{\head}{\texttt{head}\xspace}
+\newcommand{\spillptr}{\texttt{spill\_ptr}\xspace}
+\newcommand{\spilllist}{\texttt{spill\_list}\xspace}
+\newcommand{\spilllistnospace}{\texttt{spill\_list}}
+\newcommand{\dist}{\texttt{dist}\xspace}
+\newcommand{\wordsdata}{\texttt{words}\xspace}
+\newcommand{\urldata}{\texttt{url}\xspace}
+\newcommand{\dnadata}{\texttt{dna}\xspace}
+\newcommand{\xmldata}{\texttt{xml}\xspace}
+\newcommand{\wikidata}{\texttt{wiki}\xspace}
+\newcommand{\logdata}{\texttt{log}\xspace}
+\newcommand{\wordsstar}{\texttt{words*}\xspace}
+\newcommand{\urlstar}{\texttt{url*}\xspace}
+\newcommand{\dnastar}{\texttt{dna*}\xspace}
+\newcommand{\xmlstar}{\texttt{xml*}\xspace}
+\newcommand{\wikistar}{\texttt{wiki*}\xspace}
+\newcommand{\logstar}{\texttt{log*}\xspace}
+\newcommand{\numtries}{eight\xspace}
+\newcommand{\numdatasets}{six\xspace}
+
+\newcommand{\bvfstspeedup}{1.58$\times$\xspace}
+% \newcommand{\bvcocospeedup}{1.11$\times$\xspace}
+\newcommand{\bvcocospeedup}{1.12$\times$\xspace}
+\newcommand{\bvmarisaspeedup}{1.42$\times$\xspace}
+\newcommand{\csqfstspeedup}{1.58$\times$\xspace}
+\newcommand{\csqcocospeedup}{1.13$\times$\xspace}
+\newcommand{\csqmarisaspeedup}{1.42$\times$\xspace}
+\newcommand{\csqfstspacesaving}{1.27$\times$\xspace}
+\newcommand{\csqcocospacesaving}{1.31$\times$\xspace}
+\newcommand{\csqmarisaspacesaving}{1.30$\times$\xspace}
+\newcommand{\toplevelspacesavings}{1.3$\times$\xspace}
+\newcommand{\fsstvsrepair}{1.12$\times$\xspace}
+
+\newcommand{\fsstmaxspacesavings}{1.3$\times$\xspace}
+
+\newcommand{\marisarecursionspace}{1.17$\times$\xspace}
+\newcommand{\marisarecursiontime}{1.30$\times$\xspace}
+
+\newcommand{\repair}{re-pair\xspace}
+\newcommand{\fsst}{FSST\xspace}
+\newcommand{\sizeshort}{Size}
+\newcommand{\queryshort}{Query}
+\newcommand{\cachemissshort}{Miss}
+\newcommand{\buildtimeshort}{Build}
+\newcommand{\bv}{bitvector\xspace}
+\newcommand{\Bv}{Bitvector\xspace}
+\newcommand{\Bvs}{Bitvectors\xspace}
+\newcommand{\bvs}{bitvectors\xspace}
+\newcommand{\islink}{\var{IsLink}\xspace}
+\newcommand{\haschild}{\var{HasChild}\xspace}
+\newcommand{\louds}{\var{LOUDS}\xspace}
+\newcommand{\child}{\var{child}\xspace}
+\newcommand{\parent}{\var{parent}\xspace}
+\usetikzlibrary{patterns}
+\newcommand{\defn}[1]{\textit{#1}}
+\renewcommand{\defn}[1]       {{\textit{\textbf{\boldmath #1}}}}
+\newcommand{\figref}[1]         {Figure~\ref{fig:#1}}
+\newcommand{\appref}[1]         {Appendix~\ref{app:#1}}
+\newcommand{\tabref}[1]        {Table~\ref{tab:#1}}
+\newcommand{\secref}[1]         {Section~\ref{sec:#1}}
+\newcommand{\lemref}[1]         {Lemma~\ref{lem:#1}}
+\newcommand{\thmref}[1]         {Theorem~\ref{thm:#1}}
+\newcommand{\secreftwo}[2]      {Sections \ref{sec:#1} and~\ref{sec:#2}}
+\newcommand{\figreftwo}[2]      {Figures \ref{fig:#1} and~\ref{fig:#2}}
+\newcommand{\tabreftwo}[2]      {Tables \ref{tab:#1} and~\ref{tab:#2}}
+\newcommand{\rcircle}{\textsuperscript{\textregistered}\xspace}
+
+\pgfplotsset{
+    discard if/.style 2 args={
+        x filter/.append code={
+            \edef\tempa{\thisrow{#1}}
+            \edef\tempb{#2}
+            \ifx\tempa\tempb
+                \def\pgfmathresult{inf}
+            \fi
+        }
+    },
+    discard if not/.style 2 args={
+        x filter/.append code={
+            \edef\tempa{\thisrow{#1}}
+            \edef\tempb{#2}
+            \ifx\tempa\tempb
+            \else
+                \def\pgfmathresult{inf}
+            \fi
+        }
+    },
+}
+
+
+\pgfplotsset{compat=1.8,
+    /pgfplots/ybar legend/.style={
+    /pgfplots/legend image code/.code={%
+       \draw[##1,/tikz/.cd,yshift=-0.25em]
+        (0cm,0cm) rectangle (3pt,0.8em);},
+   },
+}
+\pgfdeclareplotmark{rotated triangle}{%
+  \pgfpathmoveto{\pgfqpoint{0pt}{-\pgfplotmarksize}}%
+  \pgfpathlineto{\pgfqpointpolar{30}{\pgfplotmarksize}}%
+  \pgfpathlineto{\pgfqpointpolar{150}{\pgfplotmarksize}}%
+  \pgfpathclose
+  \pgfusepathqstroke
+}
+
+\pgfdeclareplotmark{rotated triangle*}{%
+  \pgfpathmoveto{\pgfqpoint{0pt}{-\pgfplotmarksize}}%
+  \pgfpathlineto{\pgfqpointpolar{30}{\pgfplotmarksize}}%
+  \pgfpathlineto{\pgfqpointpolar{150}{\pgfplotmarksize}}%
+  \pgfpathclose
+  \pgfusepathqfillstroke
+}
+
+\definecolor{safe-black}{RGB}{0,0,0}
+\definecolor{safe-olive}{RGB}{0,73,73}
+\definecolor{safe-teal}{RGB}{0,146,146}
+\definecolor{safe-pink}{RGB}{255,109,182}
+\definecolor{safe-peach}{RGB}{255,160,110}
+\definecolor{safe-plum}{RGB}{73,0,146}
+\definecolor{safe-cerulean}{RGB}{0,109,219}
+\definecolor{safe-lavender}{RGB}{182,109,255}
+\definecolor{safe-sky}{RGB}{109,182,255}
+\definecolor{safe-baby}{RGB}{182,219,255}
+\definecolor{safe-brick}{RGB}{146,0,0}
+\definecolor{safe-brown}{RGB}{146,73,0}
+\definecolor{safe-orange}{RGB}{219,209,0}
+\definecolor{safe-green}{RGB}{36,255,36}
+\definecolor{safe-yellow}{RGB}{255,255,109}
+\definecolor{safe-darkgreen}{RGB}{36,200,36}
+
+\pgfplotscreateplotcyclelist{mylist}{%
+    {safe-pink, mark=square*},
+    {safe-cerulean, mark=triangle*},
+    {safe-peach, mark=x,mark options={scale=1.6}},
+    {blue, mark=star,mark options={scale=1.6}},
+    }
+
+    \pgfplotscreateplotcyclelist{mylistshapes}{%
+    {safe-pink, mark=square*},
+    {safe-cerulean, mark=triangle*},
+    {safe-peach,mark=*},
+    {blue, mark=diamond*},
+    }
+
+\makeatletter
+\def\BState{\State\hskip-\ALG@thistlm}
+\makeatother
+
+\newcommand{\bvdesign}{$\text{C}_1$\xspace}
+\newcommand{\compressionscheme}{$\text{C}_2$\xspace}
+
+\newcommand{\csquared}{$\texttt{C}^2$\xspace}
+
+
+%% Shrink space around figures.
+%% This beats manually adding negative \vspace commands everywhere.
+\setlength{\textfloatsep}{0pt}
+%\setlength{\textfloatsep}{20pt plus 2pt minus 4pt}
+%\setlength{\textfloatsep}{10pt plus 2pt minus 4pt}
+%\setlength{\textfloatsep}{10pt plus 1pt minus 2pt}
+%\setlength{\dbltextfloatsep}{3pt}
+%\setlength{\intextsep}{5pt}
+%\setlength{\abovecaptionskip}{5pt}
+\setlength{\belowcaptionskip}{0pt}
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:

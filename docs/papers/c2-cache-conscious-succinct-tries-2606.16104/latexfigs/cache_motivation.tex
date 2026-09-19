@@ -1,0 +1,46 @@
+\begin{table}[t]
+  \caption{ Average number of LLC misses per query on the two largest datasets.
+    FST~\cite{surf}, CoCo-trie~\cite{coco_1} and Marisa~\cite{marisa} are
+    \bv-based succinct tries, while C-ART~\cite{hybrid_index} is a pointer-based
+    compact trie.  Tries prefixed with \csquared- are our cache-optimized
+    versions.  }
+  \resizebox{\columnwidth}{!}{%
+    \begin{tabular}{llllllll}
+        \toprule
+        \textit{Dataset}
+        & \textit{FST}
+        & \textit{\begin{tabular}{@{}l@{}}\csquared-\\FST\end{tabular}}
+        & \textit{CoCo'}
+        & \textit{\begin{tabular}{@{}l@{}}\csquared-\\CoCo\end{tabular}}
+        & \textit{Marisa}
+        & \textit{\begin{tabular}{@{}l@{}}\csquared-\\Marisa\end{tabular}}
+        & \textit{C-ART} \\
+        \midrule
+
+        \wikidata~\cite{wiki-dataset}
+        & 82
+        & 78
+        & 66
+        & 49
+        & 56
+        & 58
+        & \textbf{23} \\
+
+        \logdata~\cite{log-dataset}
+        & 235
+        & 230
+        & 57
+        & \textbf{45}
+        & 58
+        & 62
+        & 117 \\
+
+        \bottomrule
+    \end{tabular}
+}
+\label{tab:cache-motivation}
+\end{table}
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../main"
+%%% End:

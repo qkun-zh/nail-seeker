@@ -1,0 +1,29 @@
+\section{Conclusion}\label{sec:conclusion}
+
+\balance This paper presents \csquared, guidelines for transforming
+bitvector-based succinct tries to more cache-friendly and compact
+versions. \csquared includes two optimizations: \bvdesign, the
+\underline{C}ache-conscious bitvector design,
+and %, introduces ways of overcoming the cache inefficiency of bitvectors;
+\compressionscheme, the adaptive unary-path \underline{C}ompression.
+% , aims to reduce data redundancy incurred by unary paths and offer competitive
+% space-time trade-offs.
+Following \csquared, we redesign three state-of-the-art succinct tries:
+\rev{FST, CoCo-trie, and Marisa}. \rev{On average, the three}
+\csquared-optimized tries improve query time by
+\newrev{\csqfstspeedup/\csqcocospeedup/\csqmarisaspeedup},
+% \todo{make sure these numbers are with fixing the recursion level}
+respectively, while using
+\newrev{\csqfstspacesaving/\csqcocospacesaving/\csqmarisaspacesaving less space}.
+
+Future work will 1) apply similar \bv optimizations to
+DFUDS/BP tries, like PDT or the DFUDS variant of CoCo-trie, \mymarginpar{R2 W2,
+  R2 D4}\rev{2) theoretically bound the space usage of practically-efficient
+  compression schemes such as approximate \repair~\cite{pdt} and
+  \fsst~\cite{fsst},} and 3) integrate other powerful text-compression
+algorithms, such as LZW~\cite{lzw}, \rev{with} succinct tries.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:

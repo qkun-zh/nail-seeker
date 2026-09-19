@@ -1,0 +1,139 @@
+\section{Introduction}\label{sec:intro}\mymarginpar{Meta 1, R1 O2, R3 O1}
+
+Succinct data structures have become essential in applications like large-scale
+databases, graph processing, and text indexing, especially in memory-constrained
+scenarios~\cite{sds_application}. They are string-data representations that use
+close to the theoretical minimum number of bits while still supporting efficient
+queries~\cite{sds_overview, munro2018succinct}. We focus on \defn{succinct
+  tries}~\cite{surf, pdt, coco_0, coco_1, marisa}, which match or exceed the
+performance of regular tries \rev{with orders of magnitude less memory.}
+
+Succinct tries separate the trie \defn{topology} from the string \defn{data},
+encoding the topology in a compact bitvector that uses only about 2 bits per
+node on average compared to at least 128 bits for two pointers in traditional
+tries~\cite{jacobson1989space}. Navigation requires auxiliary index operations
+(e.g., ``\rankop'' and ``\selectop'') on top of this bitvector.
+
+\input{latexfigs/cache_motivation}
+
+\newmymarginpar{Meta 1, R1 O2, R3 O1/D1}\para{Challenges to locality}
+  Existing \bv-based succinct tries exhibit suboptimal locality in two respects:
+  1) the \emph{bitvector layout} in the topology, and 2) the \newmymarginpar{R2
+    O3/D6}\newrev{\defn{unary paths}, or maximal trie paths of at least 2 nodes
+    in which every node except the last has exactly one child}, in the data.
+  For example, in~\figref{louds-example}, paths 0-1-4 (``ca'') and 0-2-5
+  (``su'') are internal unary paths, whereas path 7-14-18 (``ie'') is a suffix
+  unary path.~\secreftwo{bv-design}{unary-path} detail both challenges.
+
+\rev{\tabref{cache-motivation}} confirms locality challenges due to navigation
+operations across state-of-the-art succinct tries. For example, a child
+navigation in Marisa~\cite{marisa} incurs at least 3 cache misses to access the
+topology \bv compared to 1 in a pointer-based trie to follow the pointer.
+
+\input{latexfigs/unary-wiki-log}
+
+\newnew{Additionally, practical datasets often include strings with long
+  shared prefixes followed by diverse \new{dangling} suffixes, which naturally
+  introduce large numbers of unary paths in trie-based representations.  For
+  example, collections of hyperlinks frequently share common prefixes such as
+  ``en.wikipedia.org/wiki/'', while differing only in their trailing titles. As
+  a result, large portions of the trie structure degenerate into long chains of
+  unary nodes.
+  %
+
+  Without effective compression, unary paths can consume a dominant fraction of
+  succinct-trie storage, increasing memory footprint and disrupting cache
+  locality.  \newmymarginpar{R1 O1}For example, as shown
+  in~\tabref{unary-wiki-log}, the majority of suffix regions in realistic
+  datasets consist of long, redundant unary chains in the two largest tested
+  inputs. In the \wikidata\ dataset, 84.1\% of all branch edges correspond to
+  compressible unary paths, with an average compressible length of 271
+  characters and a maximum compressible length of over 8K characters. Similarly,
+  the \logdata\ dataset contains 78.8\% compressible unary paths.}
+
+
+% \para{Cache-conscious \bv redesign}
+\para{Optimizing for locality in \bv-based succinct tries} \emph{We introduce
+  \csquared, a set of techniques that improve locality in both the topology and
+  the data of succinct tries.} \newmymarginpar{Meta 3, R1 O3, R3 O2}\newrev{We target two operations: the \defn{existence query} (checking
+  whether a key exists) and the \defn{range query} (returning a range of keys).}
+
+The first ``C'' of~\csquared improves cache locality of the \selectop index
+in succinct tries. We introduce the \defn{functional index}, a novel
+\selectop index layout that maps straightforwardly to bit positions, enabling
+both \rankop and \selectop indexes to be inlined in the bit sequence.
+%
+\mymarginpar{Meta 4}\rev{Using the functional index, we cut random accesses to
+  two per child navigation in LOUDS-based succinct tries, which include many
+  state-of-the-art tries such as the FST~\cite{surf},
+  CoCo-trie~\cite{coco_0}, and Marisa~\cite{marisa}. \tabref{cache-motivation}
+  and \secref{experiments} show that this optimization reduces cache misses by
+  19\% on average with at most $2\%$ overall space overhead.}
+
+\mymarginpar{R3 O2, Meta 4}\newrev{The second ``C'' of~\csquared is an
+  \defn{adaptive compression} algorithm that gives \emph{any} succinct trie
+  access to compression in the ``tail container,'' which stores the remaining
+  string suffixes at the end of trie paths. Building on
+  ``\repair''~\cite{larsson2000off} and ``recursion''~\cite{marisa}, two
+  orthogonal techniques for path compression, we enable all
+  tries to use both recursion and the Fast Static Symbol Table
+  (\fsst)~\cite{fsst}, a lightweight scheme that achieves good compression
+  ratios with fast build times. Although recursion and compressed tail
+  containers appear in prior work, this is the first generalization of
+  recursion across tail containers, exposing space-time tradeoffs for any
+  succinct trie.}
+
+% \para{Applying \csquared to state-of-the-art succinct tries}
+
+\input{latexfigs/intro_results_summary}
+\para{Contributions} Our primary contributions are as follows:
+\begin{itemize}[leftmargin=*,noitemsep]
+\item We redesign the succinct-trie \rev{topology} with a \emph{cache-conscious}
+  functional index that inlines both \rankop and \selectop indexes, minimizing
+  cache misses during trie navigation.
+\item \rev{We propose an \emph{adaptive compression scheme} that selects the
+    best compression strategy per dataset to balance space and query
+    performance.} \newrev{Our experiments indicate that the chosen strategy improves
+  space efficiency by \toplevelspacesavings on average with similar
+   (within $1.05\times$) query performance compared to the original succinct trie versions.} Furthermore, increasing compression aggressiveness exposes further space-time tradeoffs.
+  \newrev{For example, on Marisa, increasing ``recursion'' for more compression yields
+  \marisarecursionspace space savings, but \marisarecursiontime slower queries.}
+\item We integrate these techniques into three state-of-the-art succinct tries
+  --- FST~\cite{surf}, CoCo-trie~\cite{coco_0, coco_1}, and Marisa~\cite{marisa}
+  ---
+  %reducing cache misses \rev{during}\mymarginpar{Meta 5, R2 D17} query
+  %operations by \rev{\todo{update ratio} on average} and
+  improving query
+  performance on the whole (with both \bvdesign and \compressionscheme
+  optimizations) by \csqfstspeedup, \csqcocospeedup, and \csqmarisaspeedup,
+  respectively.
+\end{itemize}
+
+
+\para{Results summary} Overall, \csquared-optimized
+tries improve cache locality and performance over their original counterparts with negligible (<4\%) additional space overhead. 
+\csquared-FST achieves better space-time performance than FST on all datasets. 
+\rev{ 
+    % \csquared-CoCo outperforms CoCo' by \csqcocospeedup in query time and \csqcocospacesaving in space
+    \csquared-CoCo outperforms CoCo' by \csqcocospeedup in query latency and is \csqcocospacesaving smaller in space, on  average across the six datasets
+        \footnote{The original CoCo-trie was designed for prefix-only datasets and fails to build on the original datasets. 
+        We implemented CoCo' by integrating CoCo-trie's topology with \csquared-CoCo.~\secref{experiments} provides the full details and shows that CoCo and CoCo' achieve almost identical performance and space usage on the prefix-only datasets.
+        }. 
+    \csquared-Marisa improves Marisa's query performance by \csqmarisaspeedup with similar memory consumption, and is generally the strongest \csquared index.
+}
+
+\figref{intro-results-summary} \rev{shows the query latency and size of the
+  different tries} on the \rev{\wikidata} and \rev{\logdata} datasets.
+\csquared-Marisa dominates all other succinct tries on query latency with the
+lowest (or within a few percent of the lowest) space usage. \rev{ART and
+C-ART, two non-succinct tries, achieve lower query latency at the cost of
+higher space usage.}
+
+\rev{These space-time improvements stem from the cache-locality gains of
+  \csquared, as demonstrated by the cache-miss counts
+  in~\tabref{cache-motivation}.}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:

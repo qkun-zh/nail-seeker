@@ -1,0 +1,92 @@
+
+
+\begin{figure}[t]
+    \pgfplotsset{every axis title/.append style={at={(0.5,0.95)}}}
+    \centering
+    \begin{tikzpicture}
+    \begin{groupplot}[
+        % group style={group size=2 by 1, horizontal sep=35pt},
+        group style={group size=1 by 2},
+        width=8cm, height=4cm,
+        ymajorgrids=true,
+        xmajorgrids=true,
+        minor x tick num=1,
+        xminorgrids=true,
+        minor y tick num= 3,
+        yminorgrids = true,
+        minor grid style=loosely dotted,
+        legend columns=4,
+        legend entries={FST, \bvdesign-FST, \csquared-FST, CoCo', \bvdesign-CoCo, \csquared-CoCo, Marisa, \bvdesign-Marisa, \csquared-Marisa, Marisa-1, \bvdesign-Marisa-1, \csquared-Marisa-1, PDT, C-ART},
+        legend to name=PerformanceLegend,
+        scatter/classes={
+            FST={mark=*, fill=safe-brown},
+            C1-FST={mark=*, fill=safe-olive},
+            C2-FST={mark=*, fill=safe-teal},
+            CoCo'={mark=rotated triangle*, safe-black},
+            C1-CoCo={mark=rotated triangle*, safe-lavender},
+            C2-CoCo={mark=rotated triangle*, safe-peach},
+            %C2-CoCo={mark=square*, orange,rotate=45, mark size=3pt},
+            Marisa={mark=diamond*, safe-plum},
+            C1-Marisa={mark=diamond*, safe-green},
+            C2-Marisa={mark=diamond*, safe-sky},
+            Marisa-1={mark=halfsquare*, safe-cerulean},
+            C1-Marisa-1={mark=halfsquare*, safe-brick},
+            C2-Marisa-1={mark=halfsquare*, orange},
+            % C2-FST'={mark=halfsquare*, safe-teal},
+            % C2-CoCo'={mark=triangle*, red},
+            % C2-Mar'={mark=diamond*, blue},
+            % C2-FST''={mark=halfsquare*, lightgray},
+            % C2-CoCo''={mark=triangle*, lightgray},
+            % C2-Mar''={mark=diamond*, lightgray},
+            % FST={mark=x, black},
+            % CoCo={mark=square*, violet},
+            % Marisa={mark=+, magenta},
+            % Mar-1={mark=otimes*, orange},
+            % Mar-2={mark=triangle, violet},
+            % PDT={mark=Mercedes star flipped, violet},
+            PDT={mark=otimes, blue},
+            C-ART={mark=oplus, red}
+        },
+        scatter src=explicit symbolic
+    ]
+
+    \nextgroupplot[
+        title={WIKI (359 MB)},
+        % xlabel={latency (\textit{ns})},
+        ylabel={Size (normalized to ART)},
+        legend to name=PerformanceLegend
+    ]
+    \addplot[scatter,only marks,mark size=3.5pt,point meta=explicit,scatter src=explicit symbolic]
+    table[x=query,y=space,meta=trie]{tsvs/results-wiki-new-2.tsv};
+
+    \nextgroupplot[
+        title={LOG (586 MB)},
+        xlabel={Query latency (normalized to ART)},
+        ylabel={Size (normalized to ART)},
+        legend to name=PerformanceLegend
+    ]
+    \addplot[scatter,only marks,mark size=3.5pt,point meta=explicit,scatter src=explicit symbolic]
+    table[x=query,y=space,meta=trie]{tsvs/results-log-new-2.tsv};
+
+    \end{groupplot}
+    \end{tikzpicture}
+
+    \begin{center}
+    \ref{PerformanceLegend}
+    \end{center}
+    \caption{
+    % \helen{Fix legend to fit in one column}
+    \rev{Space-time performance
+        comparison on \wikidata~\cite{wiki-dataset} and
+        \logdata~\cite{log-dataset} (normalized to ART). We use FSST as the tail
+        container in all \csquared-tries. The prefixes "\bvdesign-"/"\csquared-"
+        indicate different optimization strategies (bitvector redesign /
+        bitvector redesign + unary path compression); the suffix "-1" means we
+        enforce one recursion (see \secref{experiments}). Lower and to the left
+        is better.}}
+    \label{fig:intro-results-summary}
+\end{figure}
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../sample-sigconf"
+%%% End:

@@ -1,0 +1,82 @@
+%%
+%% this file OpenProc-Mods.sty
+%%
+%% it contains OpenProceedings.org modifications
+%% of the acmart LaTeX class
+%%
+%% version as-of: 2026-05-06
+%% Marc H. Scholl for openproceedings.org
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{OpenProc-Mods}[2026-05-06 v0.9 OpenProceedings modifications of acmart.cls]
+
+%%
+%%
+\AtBeginDocument{%
+  % create metadata file in XML:
+  \newwrite\XMLMetadataFile
+  \immediate\openout\XMLMetadataFile=\jobname.xml
+  \immediate\write\XMLMetadataFile{<paper>}
+}
+
+%% copied from acmart.cls, but modified to a4paper
+\geometry{twoside=true, head=13pt,
+     a4paper, % for OpenProceedings: use A4 paper
+%     paperwidth=8.5in, paperheight=11in,
+     includeheadfoot, columnsep=2pc,
+     top=57pt, bottom=73pt, inner=54pt, outer=54pt,
+     marginparwidth=2pc,heightrounded
+     }%
+
+
+%% close metadata file when \maketitle is done.
+%%
+\AddToHook{cmd/maketitle/after}{%
+  \immediate\write\XMLMetadataFile{<path>\jobname.pdf</path>}
+  \immediate\write\XMLMetadataFile{</paper>}
+  \immediate\closeout\XMLMetadataFile
+}% executed at end of \maketitle processing
+
+
+%% %%%%%%%%%%%%%%%% %%
+%% OpenProceedings: %%
+%% %%%%%%%%%%%%%%%% %%
+%%
+%% we need to use these modified commands/environment to add
+%%
+%% author names [optionally with ORCID-Ids],
+%% title and
+%% abstract,
+%%
+%% such that we can write their contents into the
+%% metadata file (\jobname.xml)
+%%
+%% %%%%%%%%%%%%%%%% %%
+
+\newcommand{\OPauthor}[2][]{
+   \author{#2}%
+   \ifblank{#1}{%  
+    \immediate\write\XMLMetadataFile{  <author>\unexpanded{#2}</author>}%
+    }%
+  {%
+    \immediate\write\XMLMetadataFile{  <author orcid-id="\unexpanded{#1}">\unexpanded{#2}</author>}%
+  \orcid{#1}
+  }%
+}
+
+\newcommand{\OPtitle}[2][]{%
+%  \ifblank{#1}{%
+%    \OrigTitle{#2}}%
+%  { \OrigTitle[#1]{#2}%
+%  }%
+  \immediate\write\XMLMetadataFile{  <title>\unexpanded{#2}</title>}%
+  \title[#1]{#2}
+}
+
+\NewDocumentEnvironment{OPabstract}{b}{
+    \immediate\write\XMLMetadataFile{  <abstract>}
+    \immediate\write\XMLMetadataFile{  \unexpanded{#1}}
+    \immediate\write\XMLMetadataFile{  </abstract>}
+    \begin{abstract}
+    #1
+    \end{abstract}
+}{}

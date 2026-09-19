@@ -1,0 +1,87 @@
+% \begin{table}[t]
+%     \caption{Build and query time (normalized to \csquared-FST, lower is better)
+%     for different LOUDS-Sparse/Dense configurations for FST. FST-Sparse/Hybrid
+%     use LOUDS-Sparse/LOUDS-Dense and LOUDS-Sparse with a sorted tail
+%     container. \csquared-FST uses the same bitvectors with the FSST tail
+%     container.}
+%   \centering \setlength{\tabcolsep}{5pt} \newnew{\begin{tabular}{lrrrr} 
+  
+%   \toprule
+%                                                    & \multicolumn{2}{c}{\textit{words} (0.47M keys)} & \multicolumn{2}{c}{\textit{log} (4.45M keys)} \\
+%                                                    \cmidrule(lr){2-3}\cmidrule(lr){4-5}
+%                                                    & \textit{Build} & \textit{Query} & \textit{Build} & \textit{Query} \\
+%                                                    \midrule
+%                                                    FST-Sparse & 7.73$\times$ & 3.50$\times$ & 2.30$\times$ & 2.73$\times$ \\
+%                                                    FST-Hybrid & 7.02$\times$ & 2.85$\times$ & 2.24$\times$ & 2.57$\times$ \\
+%                                                    C\textsuperscript{2}-FST-Sparse & 5.31$\times$ & 1.52$\times$ & 1.53$\times$ & 1.82$\times$ \\
+%                                                    C\textsuperscript{2}-FST-Hybrid & 5.29$\times$ & 1.45$\times$ & 1.55$\times$ & 1.85$\times$ \\
+%                                                    \midrule
+%                                                    C\textsuperscript{2}-FST$$ & 1.00$\times$ & 1.00$\times$ & 1.00$\times$ & 1.00$\times$ \\
+%                                                    \bottomrule
+%     \end{tabular}}
+%   \label{tab:fst-ablation-rel}
+% \end{table}
+
+% %%% Local Variables:
+% %%% mode: latex
+% %%% TeX-master: "../main"
+% %%% End:
+
+
+\begin{table}[t]
+\caption{
+Normalized build and query time (relative to \csquared-FST; lower is better)
+for different LOUDS-Sparse/Dense configurations of FST.
+FST-Sparse uses LOUDS-Sparse/LOUDS-Dense, while FST-Hybrid uses
+LOUDS-Sparse, both with a sorted tail container.
+\csquared-FST uses the same bitvectors with the FSST tail container.
+}
+\centering
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lrrrr}
+\toprule
+& \multicolumn{2}{c}{\textit{words} (0.47M keys)}
+& \multicolumn{2}{c}{\textit{log} (4.45M keys)} \\
+\cmidrule(lr){2-3}
+\cmidrule(lr){4-5}
+& \textit{Build}
+& \textit{Query}
+& \textit{Build}
+& \textit{Query} \\
+\midrule
+FST-Sparse
+    & 7.73$\times$
+    & 3.50$\times$
+    & 2.30$\times$
+    & 2.73$\times$ \\
+
+FST-Hybrid
+    & 7.02$\times$
+    & 2.85$\times$
+    & 2.24$\times$
+    & 2.57$\times$ \\
+
+\csquared-FST-Sparse
+    & 5.31$\times$
+    & 1.52$\times$
+    & 1.53$\times$
+    & 1.82$\times$ \\
+
+\csquared-FST-Hybrid
+    & 5.29$\times$
+    & 1.45$\times$
+    & 1.55$\times$
+    & 1.85$\times$ \\
+\iffalse
+\midrule
+
+\csquared-FST
+    & 1.00$\times$
+    & 1.00$\times$
+    & 1.00$\times$
+    & 1.00$\times$ \\
+\fi
+\bottomrule
+\end{tabular}
+\label{tab:fst-ablation-rel}
+\end{table}

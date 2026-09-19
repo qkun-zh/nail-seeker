@@ -1,0 +1,509 @@
+\section{Experimental Evaluation}\label{sec:experiments}
+
+%\todo{put ratios in macros and update throughout}
+We evaluate three succinct tries optimized using \csquared (\csquared-FST,
+\csquared-CoCo, and \csquared-Marisa) and compare them with \numtries state-of-the-art
+tries: FST \cite{surf}, Marisa \cite{marisa}, CoCo-trie \cite{coco_0, coco_1},
+PDT \cite{pdt}, ART \cite{art}, C-ART \cite{hybrid_index}, \newmymarginpar{Meta
+  4, R2 O2}\newrev{c-trie++~\cite{tsuruta2022c}, and z-fast
+  trie~\cite{belazzougui2010dynamic}}. The first four are \bv-based succinct
+tries introduced in \secref{preliminaries}; ART is a well-established
+pointer-based dynamic trie, C-ART is the compact and static version of ART, and
+\newrev{c-trie++/z-fast trie are high-performance dynamic tries}. We compare all
+data structures on query performance, space usage, and build time.
+
+\para{Summary} The \csquared tries significantly outperform the original
+versions in both performance and space efficiency on most datasets.  On average,
+\csquared-FST, \csquared-CoCo, and \csquared-Marisa improve query
+performance/space usage by \csqfstspeedup/\csqfstspacesaving,
+\csqcocospeedup/\csqcocospacesaving, and \\
+\csqmarisaspeedup/\csqmarisaspacesaving, respectively (at equal recursion).
+
+These improvements stem from improved locality and fewer cache misses in both
+the index and the data. Applying \bvdesign (the cache-conscious bitvector
+redesign in~\secref{bv-design}) reduces cache misses per query by $1.51\times$
+for FST and $1.26\times$ for Marisa on large datasets. The \bv redesign adds at
+most $4\%$ space overhead. At equal recursion, \compressionscheme (the
+unary-path compression scheme in~\secref{unary-path}) improves query
+performance, space usage, or both over \bvdesign alone.
+
+\subsection{Experimental Settings}\label{sec:experimental-setup}
+
+\input{latexfigs/table-datasets}
+
+\para{Hardware} \newrev{We ran the experiments on a server with an AMD EPYC 9555
+  64-Core Processor running at 3.2GHz. The server has 1007 GB of memory, a 3 MiB
+  L1 data cache, a 2 MiB L1 instruction cache, a 64 MiB L2 cache, and a 256 MiB
+  L3 cache.} We ran the experiments with one thread.
+
+
+\para{Implementation} We implement the three \csquared tries (\csquared-FST,
+\csquared-CoCo and \csquared-Marisa) using C++17. We use the compressed string
+pool implementation of PDT~\cite{pdt-code} \new{and the publicly-available
+  implementation~\cite{fsst-code} of FSST~\cite{fsst} for the \repair and \fsst
+  tail containers, respectively.} We also \rev{use} the sdsl~\cite{sds_overview,
+  sdsl_lib}, ds2i~\cite{ds2i} and sux~\cite{rank_select_0} libraries for
+\csquared-CoCo as in the original CoCo-trie~\cite{coco-code}.
+%\new{Finally, we use the optimized build routine from CoCo' for \csquared-CoCo.}
+
+For CoCo-trie~\cite{coco-code}, Marisa~\cite{marisa-code}, PDT~\cite{pdt-code}
+and C-ART~\cite{cart-code}, we use their original implementations. We adopt the
+ART implementation in the C-ART codebase. For FST, we use an optimized
+third-party implementation~\cite{fst-code} which compacts suffixes into a
+contiguous array, as this allows for fairer comparison with many unary suffix
+paths. \newmymarginpar{Meta 4, R2 O2}\newrev{Finally, we also evaluate
+  c-trie++~\cite{tsuruta2022c} and z-fast trie~\cite{belazzougui2010dynamic},
+  two state-of-the-art dynamic tries. }
+
+\newmymarginpar{Meta 3, R3 O2}\newnew{All tested systems support
+  existence queries, but out of the tested \csquared tries, only FST supports an
+  iterator for range queries. Therefore, we evaluate FST versus \csquared-FST on
+  range queries. In each experiment, we generate range queries with a start key
+  and a length, or number of subsequent keys to return beginning from the start
+  key. We vary the query lengths \texttt{k} between experiments and test
+  $\texttt{k} = 1, 10, \ldots, 10000$.}
+
+The ART and C-ART implementations we use are designed as filters but not indexes
+and may return false positives. To support lossless queries, the original
+dataset must be replicated and may need to be checked when the filter returns
+positive results. We report space costs without the replicated dataset; query
+times include false-positive checks.
+
+Finally, as detailed in~\secref{coco-prime}, we introduce CoCo', a version of
+the CoCo-trie with an optimized build routine but the same \bv design, because
+the open-source CoCo-trie does not build on large datasets.
+
+All code is compiled with g++ 10.3.0 at -O3.
+
+All implementations used in our experiments are publicly available at
+\url{https://github.com/alexztc/C2}.
+
+\para{Parameter settings} For FST, we use the default setting with $R =
+64$. \rev{For CoCo-trie, CoCo', and \csquared-CoCo, we set $\alpha = 5\%$ for a
+  good space-time balance.}  We do not enable LOUDS-Dense for \csquared-FST as
+it provides no benefit. \new{We use Marisa's default cache size for both Marisa
+  and \csquared-Marisa, which is 1/512 of the key count. We set $\epsilon = .1$
+  for all \csquared tries.}
+
+\para{Datasets} \tabref{datasets} details the \numdatasets datasets in our
+evaluation.  These datasets span diverse sources, key lengths, prefix depths,
+and alphabet sizes.
+
+\rev{Furthermore, following the methodology from the CoCo-trie
+  paper~\cite{coco_1}, we generate prefix-only versions of each dataset (denoted
+  by \texttt{dataset*}) because CoCo originally used only prefix-only
+  datasets. We compare the open-source CoCo implementation with our CoCo'
+  implementation on the prefix-only datasets.}
+
+\para{Experimental setup} We set up experiments as follows: First, each dataset
+is sorted and deduplicated. Second, we build the trie under test on the dataset
+and record the build time and memory usage. Finally, we query the trie using all
+keys in the dataset in random order and compute the average query latency. We
+omit negative-query latencies, as they are generally proportional to positive
+workloads~\cite{coco_1}. We also measure the cache performance of queries in
+different tries on the \logdata and \wikidata datasets by recording the number
+of cache misses using \texttt{perf}. \newrev{All times are the average of three
+  trials after one warm-up trial.}
+
+\para{Notation} We use Marisa-$i$ to denote Marisa with $i$ levels of
+recursion. Furthermore, for a given trie X, we use \bvdesign-X to denote X
+optimized with \bvdesign (\secref{bv-design}). We use \csquared-X to denote X
+with both \bvdesign and \compressionscheme. For example, \bvdesign-FST is
+\bvdesign-optimized FST with sorted tail container, whereas \csquared-Marisa-1
+is \bvdesign-optimized Marisa with \fsst tail container and one level of
+recursion.
+
+
+\subsection{Building \csquared-CoCo on larger datasets}\label{sec:coco-prime}
+\input{latexfigs/table-c1-ablation}
+Since the original CoCo-trie implementation
+runs out of memory when building the larger prefix-only datasets, we implement
+an optimized build routine underneath \csquared-CoCo to support all datasets.
+The original CoCo is built from a pointer-based uncompacted trie, which not only
+consumes excessive memory but also incurs significant cache misses when
+traversing each node's descendants at different levels, a key operation of
+CoCo-trie's optimization process. We optimize the builder by representing the
+uncompacted trie as \csquared-FST, which significantly reduces cache misses
+because in LOUDS-Sparse representation each node's descendants at the same level
+fall into contiguous memory. Our implementation reduces the build time of
+\csquared-CoCo by up to $14\times$ and uses orders of magnitude less memory
+during build than the original CoCo-trie.
+
+We introduce \defn{CoCo'}: \csquared-CoCo's build routine with the original
+CoCo-trie \bv, to isolate \bv differences. % on larger datasets.
+
+\mymarginpar{R2 D8, R2 D11}\rev{We use CoCo' as the CoCo-trie baseline for
+  larger datasets. As shown in~\tabref{coco-vs-coco-prime}, on the prefix-only
+  datasets that the original CoCo-trie can build on, CoCo-trie and CoCo' have
+  similar query latencies (within \newrev{100} ns). However, the original CoCo-trie suffers from poor
+  performance and space usage on full datasets because it does not handle unary
+  suffix paths. For example, on \urldata, a relatively small dataset, the
+  original CoCo-trie implementation requires more than 10 minutes and 60 GB of
+  memory to build. Furthermore, it takes over 2000 ns/query and occupies nearly
+  half as much memory as the original dataset, both the worst among all tested
+  tries.}
+
+
+\input{latexfigs/table-alation}
+
+\input{latexfigs/table-c2-full}
+\subsection{Ablation Study and Sensitivity Analysis}\label{sec:ablation-study}
+
+\figref{intro-results-summary} shows ablation results of \bvdesign and \csquared
+across configurations of FST, CoCo, and Marisa. \tabref{c2-full} contains the
+full data for the different \csquared configurations discussed
+in~\secreftwo{ablation-study}{performance-comparison}.
+
+\newmymarginpar{Meta 5, R3 O4}\newnew{\para{Effect of hybrid
+    \bv}~\tabref{fst-ablation-rel} evaluates the effect of switching to
+  LOUDS-Sparse in FST~\cite{surf}. As mentioned in~\secref{preliminaries}, the
+  original FST introduced a hybrid \bv with LOUDS-Sparse and LOUDS-Dense. We
+  find that the hybrid \bv improves the performance of both build and query in
+  the baseline FST (with no special tail container). However, the effect is much
+  smaller on \csquared-FST with the FSST tail container, so we switch to the fully
+  sparse version in the final \csquared configuration.}
+
+
+
+
+%   \para{Effect of cache-optimized \bv design} First, we isolate the effect of
+%   $C_1$, the cache-optimized \bv design. We perform the ablation study on the
+%   datasets in~\tabref{datasets} (1) with the sorted tail container and no
+%   recursion to avoid confounding factors from path compression, and (2) with all
+%   branching labels stored out of place to suppress intra-node search effects.
+% % We omit \texttt{wiki*} and \texttt{log*} from the table due to space
+% % limitations and because the original CoCo-trie runs out of memory and cannot
+% % build. However, as mentioned in~\secref{experimental-setup}, we introduce an
+% % optimized build scheme CoCo' that addresses this issue. We observe similar
+% % trends on these two larger datasets.
+
+%   The ablation study in \tabref{c2-full} shows that the $C_1$ optimization
+%   improves query performance by \bvfstspeedup, \bvcocospeedup, and \bvmarisaspeedup,
+%   respectively, compared to the original FST, CoCo-trie, and Marisa.
+%   %As shown
+%   %in \tabref{cache-motivation}, \bvdesign reduces cache misses by an average of
+%   %$1.51\times$ for \csquared-FST and $1.23\times$ for \csquared-Marisa.
+
+%   The bitvector redesign has the least impact in the CoCo-trie because the query
+%   time in CoCo is dominated by the cost to read the encodings. However, FST and
+%   Marisa improve significantly because \bv cache misses dominate query time.
+
+%   \input{latexfigs/table-trie-op}
+
+% \tabref{trie-op} reports the effect of \bvdesign on the fine-grained \bv
+% operations that make up succinct-trie navigation.\mymarginpar{R1 D5} The results
+% demonstrate that \bvdesign improves the performance of key \newrev{rank-based
+%   operations such as \textsc{leaf\_id} and \textsc{internal\_id} by
+%   $1.2-7.1\times$.} We observe similar trends for trie-specific operations, such
+% as parent navigation in Marisa. \newrev{The only operators where the baseline is
+%   faster are \textsc{get} and \textsc{degree}, which perform linear scans
+%   through bits and do not use rank and select. However, neither of these lie on
+%   the critical path of a full lookup or range query}.
+
+
+
+
+\para{Effect of cache-optimized \bv design}
+  First, we isolate the effect of \bvdesign, the cache-optimized \bv design.
+  We perform the ablation study on the datasets in~\tabref{datasets} (1) with the
+  sorted tail container and no recursion to avoid confounding factors from path
+  compression, and (2) with all branching labels stored out of place to suppress
+  intra-node search effects\newrev{, so that the remaining query-time difference
+  is attributable to the \bv layout alone}.
+
+  The ablation study in \tabref{c2-full} shows that the \bvdesign optimization
+  improves query performance by \bvfstspeedup, \bvcocospeedup, and
+  \bvmarisaspeedup, respectively, compared to the original FST, CoCo-trie, and
+  Marisa. \newrev{These trie-level gains compound directly from the per-operator
+  speedups in \tabref{trie-op}, since every full lookup issues
+  $O(\mathit{depth})$ rank queries on the topology bitvector and a small
+  constant number of select queries, each of which benefits from the co-located
+  block metadata in our layout.}
+
+  The bitvector redesign has the least impact in the CoCo-trie because the query
+  time in CoCo is dominated by the cost to read the encodings, and each
+  CoCo macro-node already amortises several traversal steps over one \bv
+  access. However, FST and Marisa improve significantly because \bv cache
+  misses dominate query time: each rank query in their baselines incurs
+  two cache misses --- one for the block summary and one for the bit field ---
+  which our co-located layout collapses to a single line.
+  %eliminating the dominant component of the per-node \bv cost}.
+
+  \input{latexfigs/table-trie-op}
+
+  \tabref{trie-op} reports the effect of \bvdesign on the fine-grained \bv
+  operations that make up succinct-trie navigation. The results demonstrate that
+  \bvdesign improves the performance of key \newrev{rank-based operations such
+  as \texttt{leaf\_id} and \texttt{internal\_id} by $1.2-7.1\times$.}
+  We observe similar trends for trie-specific operations, such as parent
+  navigation in Marisa\newrev{ ($1.76\times$ on \texttt{parent\_pos}) and child
+  navigation across all three tries ($1.3-2.8\times$ on \texttt{child\_pos})}.
+  \newrev{The only operators where the baseline is faster are \texttt{get} and
+  \texttt{degree}, which perform linear scans through bits and do not use rank
+  and select\newrev{; interleaving block metadata with the bit field slightly
+  reduces the effective bit density per cache line on such scans}. However,
+  neither of these lie on the critical path of a full lookup or range
+  query\newrev{, and both are invoked $O(1)$ times per query at sub-3-ns cost
+  each, so the few nanoseconds lost are dwarfed by the tens of nanoseconds
+  saved on every rank query}}.
+
+
+
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\textwidth]{figs/recursion_pareto_row.pdf}
+    \caption{
+    Space-latency Pareto frontier under recursion depths
+    $\rho\in\{0,1,2\}$ for the three trie variants across all six datasets.}
+    \label{fig:recursion-pareto}
+\end{figure*}
+
+
+
+
+
+
+\para{Effect of unary-path compression} \new{Next, we
+  evaluate the effect of the \compressionscheme compression
+  scheme. Specifically, for all tries, we measure the effect of replacing the
+  sorted tail container with \fsst. Furthermore, we test different recursion
+  levels to evaluate the space-time tradeoff exposed by more recursions.}
+  %.~\figref{tuning-results}
+ % visualizes the results of this sensitivity analysis on the \texttt{log}
+ % dataset, and ~\tabref{c2-full} contains the full data.}
+
+\newrev{Replacing the sorted tail container with \fsst improves space usage by
+  \csqfstspacesaving, \csqcocospacesaving, and \csqmarisaspacesaving over
+  \bvdesign-FST, \bvdesign-CoCo, and \bvdesign-Marisa, respectively. The effect
+  on query performance is minimal (1-1.05$\times$ on average).
+}
+
+
+
+
+
+
+     % Fewer recursion levels expose Pareto-optimal space-time trade-offs.
+     % For example, on \csquared-Marisa,
+     %  \newmymarginpar{R3 D9} \newrev{on the \logdata dataset, no recursion takes 829 ns/query, while one level of recursion takes 1308 ns/query.
+     %  On the other hand, the space usage improves from 20.7\% to 14.7\%. Similarly, on the \wikidata dataset, no recursion takes 732 ns/query compared to 979 ns/query with one level of recursion.
+     %  For \wikidata, one level of recursion improves the space usage from 32.9\% to 28.3\%.}
+
+     %     Beyond this point, further recursion's space savings do not justify the
+     % performance penalty. For example, if we continue to recurse \csquared-Marisa-1
+     % on \xmldata/\logdata, %\todo{update}
+     % the relative space usages improve by about \newrev{3$\times$} (which
+     % corresponds to a 15-20\% improvement relative to the original data size), but
+     % the query latencies degrade by about \newrev{1.5$\times$}. We observe similar
+     % results for the other tested tries and will include the relevant data in the
+     % \newmymarginpar{R3 D7}\newrev{arXiv} version.\todo{put the actual data in?}
+
+
+As shown in~\figref{recursion-pareto}, recursion levels 0 and 1 expose Pareto-optimal space-time trade-offs.
+  For example, on \csquared-Marisa, on the \logdata dataset, no recursion takes
+  829 ns/query, while one level of recursion takes 1308 ns/query. On the other
+  hand, the space usage improves from 20.7\% to 14.7\%. Similarly, on the
+  \wikidata dataset, no recursion takes 732 ns/query compared to 979 ns/query
+  with one level of recursion. For \wikidata, one level of recursion improves
+  the space usage from 32.9\% to 28.3\%.
+
+  The same pattern holds for \csquared-FST and \csquared-CoCo. On the \logdata
+  dataset, \csquared-FST without recursion takes 2187 ns/query at 24.4\% space,
+  while one level of recursion takes 2502 ns/query at 20.1\% space; on the same
+  dataset, \csquared-CoCo without recursion takes 1463 ns/query at 23.9\% space,
+  while one level of recursion takes 1745 ns/query at 19.6\% space. The same
+  trade also holds on \wikidata, \xmldata, \urldata, and \dnadata: across our
+  six datasets, the absolute space savings from recursion levels 0 to 1 range
+  from 0 percentage points (e.g., \wordsdata, whose avg.\ longest common prefix
+  of 6 leaves no recursive sub-prefix structure to extract) to roughly 6
+  percentage points (\logdata across all three variants), while the
+  corresponding latency degradation stays below 1.5$\times$ in every cell.
+
+  Beyond one level of recursion, further recursion's space savings rarely justify the
+  performance penalty. For example, if we continue to recurse \csquared-Marisa-1
+  on \logdata, the relative space usage improves by 1.6$\times$ (which
+  corresponds to a 5.3 percentage point improvement relative to the original
+  data size, from 14.7\% to 9.4\%), but the query latency degrades by 1.25$\times$
+  (from 1308 to 1593 ns/query); on \xmldata, the same step yields no measurable
+  further space improvement. In fact, \logdata is the only dataset on which
+  $\rho{=}2$ strictly Pareto-dominates $\rho{=}1$ across all three tries, owing
+  to its 113-character average key length harbouring nested common prefixes
+  that a second recursion round can still extract. We observe one further
+  anomaly: on \dnadata, \csquared-Marisa is fully insensitive to recursion ---
+  its size remains at 41.1\% of the original data and its latency varies by less
+  than 1\% across $\rho \in \{0,1,2\}$ --- because its unary-path encoder
+  already absorbs DNA's unique-suffix structure at $\rho{=}0$, leaving no
+  inter-tail prefix redundancy for the adaptive cost-based recursive
+  string-pool builder to exploit.
+
+  Going forward, we limit the recursion level of \csquared-FST and \csquared-CoCo
+  to 0 to match the original designs. For \csquared-Marisa, we use the recursion
+  level prescribed by the adaptive compression scheme. We expose recursion as
+  an option for space-constrained settings: dialling \csquared-Marisa up to
+  $\rho{=}2$ on long-key datasets like \logdata trades a further 5 percentage
+  points of space for a 1.25$\times$ query latency penalty, while on every
+  other dataset the same dial yields at most one percentage point of additional
+  space and is therefore Pareto-dominated by $\rho{=}1$.
+
+
+
+
+
+
+
+
+
+
+
+
+\begin{figure*}[t]
+    \centering
+
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figs/range_latency_fst_vs_c2fst_k1.pdf}
+        % \caption{$w=10$}
+        \label{fig:range-fst-w10}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figs/range_latency_fst_vs_c2fst_k100.pdf}
+        % {figs/range_latency_fst_vs_c2fst_w100.pdf}
+        % \caption{$w=100$}
+        \label{fig:range-fst-w100}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.32\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{figs/range_latency_fst_vs_c2fst_k10000.pdf}
+        % {figs/range_latency_fst_vs_c2fst_w1000.pdf}
+        % \caption{$w=1000$}
+        \label{fig:range-fst-w1000}
+    \end{subfigure}
+    \caption{ \newnew{ Range-query latency comparison between FST-baseline and
+        \csquared-FST across six datasets under different range widths $k$.  Each
+        subplot corresponds to a fixed range width.  Bars report absolute
+        latency (left axis), while the red line indicates the speedup of
+        \csquared-FST over the baseline (right axis).} }
+
+    \label{fig:range-fst-vs-c2fst}
+\end{figure*}
+
+
+
+
+
+\subsection{Comparison to State-of-the-art
+  Tries}\label{sec:performance-comparison}\mymarginpar{R2 D10}
+
+We compare \csquared tries with all baselines.\rev{~\tabref{c2-full} reports the
+  full data and the configurations prescribed by the \compressionscheme, the
+  adaptive compression algorithm.}
+
+\para{Existence queries} \rev{Among all tries, ART always has the best query
+  performance at the cost of high space usage. Child navigation in ART simply
+  requires following a pointer, while succinct tries must perform complex \bv
+  operations. \mymarginpar{R1 D5, R3 D2}\new{Furthermore,
+    C-ART~\cite{hybrid_index} uses an internal-node organization that trades
+    search performance for space savings over ART.}} \newmymarginpar{Meta 4, R2
+  O2}\newrev{Both c-trie++ and z-fast trie are slower than ART for queries while
+  consuming significantly more space.}
+
+
+\new{\tabref{c2-full} demonstrates that \compressionscheme does not affect the
+  query-time gains from \bvdesign across tries and datasets.}  \rev{Among the
+  succinct tries}, \csquared-Marisa achieves the lowest query latency with a
+space usage within $1.2\times$ of the best. On average, \csquared-Marisa
+improves the query latency of the original Marisa by \csqmarisaspeedup.
+
+On \texttt{words} and \texttt{url}, \csquared-Marisa-1's space consumption is
+relatively high compared to \rev{Marisa}-1 \mymarginpar{R3 O4}\rev{because in
+  this case, the \compressionscheme scheme stores short unary paths in place
+  rather than in the tail container (see~\secref{unary-path}). For example, on
+  the \texttt{words} dataset, \csquared-Marisa contains only about .3$\times$ as many
+  links as Marisa.}
+
+% \todo{make sure these hold with the changes in fixing recursion
+  % level}
+\csquared-FST improves query latency/space usage by
+\csqfstspeedup/\csqfstspacesaving on average compared with FST.
+% while using similar or less memory (between $.73\times-1.12\times$).
+\csquared-CoCo does not benefit as \rev{much} from \bvdesign as it incurs fewer
+\bv operations, but still improves both space usage and query latency compared
+to \rev{CoCo'}.
+
+\para{Time-space tradeoff} \new{We next examine query time and space
+  usage. \compressionscheme improves space usage by $1.34\times$ \rev{on
+    average} compared to their original versions.}
+
+\new{On average, with no recursion, switching from the
+  sorted tail container to FSST reduces the space usage by \toplevelspacesavings at the
+  cost of a $1.05\times$ query performance penalty and $1.1\times$ higher build
+  time across all tested succinct tries.
+
+  Additionally, for Marisa, on the datasets where \compressionscheme prescribes
+  one level of recursion, the recursion improves the space efficiency by
+  % \todo{update numbers to reflect marisa only}
+  $1.29\times$ on average, but also incurs a query performance penalty of
+  $1.43\times$ compared to no recursions.}  \rev{Specifically, recursion turns
+  out to be extremely effective on the highly redundant \logdata dataset. For
+  \csquared-Marisa, one level of recursion reduces the space cost by
+  $1.74\times$, but increases the query time by $1.7\times$ compared to no
+  recursions due to the presence of many recursive paths.}
+
+\new{On \wordsdata, \urldata and \wikidata, \csquared-Marisa-1 has higher space
+  usage (by at most $1.19\times$) than Marisa-1 because of the space overhead of
+  storing the branching labels in place
+  (see~\secref{unary-path}). %outweighs the savings of \fsst. %the FSST tail container in these cases.
+}
+
+On the \rev{larger datasets (e.g., \logdata)}, \csquared-FST and \csquared-CoCo
+are generally less competitive than \csquared-Marisa in both query performance
+and compression ratio, due to their handling of internal unary
+paths. \csquared-FST does not handle such paths at all, \rev{and} \csquared-CoCo
+does not address the data redundancy in such paths. Furthermore, unary paths
+that do not fit the machine word size will be fragmented in \csquared-CoCo,
+impairing data locality.
+
+\newrev{\para{Range queries} \newmymarginpar{Meta 3, R1 O3}
+  ~\figref{range-fst-vs-c2fst} shows that the \csquared optimizations speed up
+  range queries by $1.2-1.5\times$ in FST, which was the only tested trie that
+  natively supports successor queries. The locality improvements in
+  \csquared-FST carry over into range queries, where each \texttt{next()} step
+  can be resolved from data in the packed 256-bit blocks, which are already in
+  cache. In contrast, the original FST fetches the equivalent information from
+  three separately heap-allocated arrays, incurring up to three cache-line
+  misses per step.
+
+  The relative advantage of \csquared-FST increases monotonically with range
+  width, with speedups on all but one configuration (\wikidata with $k =
+  1$). The \wikidata contains many diverse suffixes, so the FSST tail container
+  in \csquared-FST finds almost nothing to compress, as shown
+  in~\tabref{c2-full}. However, \csquared-FST must incur additional indirections
+  during traversal to check the \texttt{is\_link} array and fetch the compressed
+  suffix, while the original FST can do a direct comparison.  }
+
+\para{Build time}\label{sec:build-performance} While modern static succinct
+tries excel at space efficiency and query latency, their build \rev{times are}
+significantly worse (\rev{between 3.2-24.7$\times$}) than \rev{the build times}
+of pointer-based tries such as ART and C-ART, especially \rev{on large
+  datasets}.\newmymarginpar{R3 D8} \newrev{Depending on the dataset, the
+  \csquared optimizations can increase the build time by about $2\times$ due to
+  the time it takes to compress the tail container. We chose FSST as the tail
+  container to try to minimize build times compared to approximate \repair,
+  which can take another $2\times$ longer, as shown in PDT's build times.}
+\rev{Furthermore, building is a one-time cost for succinct tries and can be
+  amortized over many queries.}
+  %Additionally, we restrict \compressionscheme
+  %to the \fsst tail container for faster build times with minimal space cost
+  %compared to approximate \repair.}
+  Future work will parallelize the build phase of succinct tries.
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:

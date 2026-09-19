@@ -1,0 +1,71 @@
+
+\begin{table}[t]
+  \caption{Datasets used in evaluation. All dataset sizes are expressed in
+    MB. LCP means length of longest common prefix.  \textit{Size*} is the size
+    of the prefix-only version of each dataset.}
+  \resizebox{\columnwidth}{!}{
+ \newrev{  \begin{tabular}{l r r r r r l}
+             \toprule
+
+    \textit{Name} & \textit{Size} & \textit{Size*} & \textit{\#Keys}
+    &\makecell{\textit{Avg} \\ \textit{len}} &\makecell{\textit{Avg} \\ \textit{LCP}} & \textit{Description}\\
+    \midrule
+
+    \wordsdata~\cite{words-dataset}
+    & 5
+    & 4
+    & 4.67E5
+    & 9
+    & 6
+    & \small{English words}\\
+
+    \urldata~\cite{web-crawl}
+    & 37
+    & 17
+    & 1.77E6
+    & 21
+    & 7
+    & \small{UK private domains}\\
+
+    \dnadata~\cite{text-collection}
+    & 101
+    & 44
+    & 3.32E6
+    & 31
+    & 11
+    & \small{DNA 31-mers}\\
+
+    \xmldata~\cite{text-collection}
+    & 117
+    & 74
+    & 2.15E6
+    & 56
+    & 33
+    & \small{dblp XML dump} \\
+
+    \logdata~\cite{log-dataset}
+    & 586
+    & 258
+    & 4.45E6
+    & 137
+    & 54
+    & \small{server access logs}\\
+
+    \wikidata~\cite{wiki-dataset}
+    & 359
+    & 236
+    & 1.75E7
+    & 21
+    & 11
+    & \small{Wikipedia titles}\\
+    \bottomrule
+  \end{tabular}}
+}
+  \label{tab:datasets}
+\end{table}
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../sample-sigconf"
+%%% End:

@@ -1,0 +1,152 @@
+\section{The Second ``C'': Adaptive Unary-Path Compression}\label{sec:unary-path}
+
+
+In this section, we address the space inefficiency incurred by unary paths
+(especially suffix unary paths) and introduce the second "C" of \csquared: the
+adaptive unary-path \underline{C}ompression scheme (denoted with
+\compressionscheme). \rev{The \compressionscheme optimization enables all tries
+  to access unary-path compression in the data. Specifically, it combines
+  Marisa's recursion~\cite{marisa} with the Fast Static Symbol Table
+  (\fsst)~\cite{fsst} as the tail container. Furthermore, it \emph{adaptively}
+  chooses the number of levels of recursion for the Marisa trie based on
+  per-dataset space savings.
+
+  We evaluate \csquared tries against baselines at the same recursion level;
+  since CoCo-trie and FST originally lack recursion, \compressionscheme
+  changes only their tail container.}
+
+\para{Locality issues in the data} \rev{Long unary paths increase topology size
+  and waste space through redundant label sequences.} \newrev{Without proper
+  compression, suffix paths can account for about 80\% of succinct-trie space,
+  as shown in~\tabref{unary-wiki-log}.}
+
+\newrev{Prior work uses two orthogonal compression methods (detailed
+  in~\secref{preliminaries}): PDT~\cite{pdt} uses \repair~\cite{larsson2000off},
+  while Marisa~\cite{marisa} uses recursion, as detailed
+  in~\secref{preliminaries}. Neither method dominates: on the
+  \texttt{log}~\cite{log-dataset} dataset, recursion and \repair achieve
+  compression ratios of 16.4$\times$ and 7.5$\times$, respectively; on
+  \texttt{xml}~\cite{text-collection}, the ratios are 3.9$\times$ and
+  5.0$\times$.} %\todo{update ratios}
+
+
+\para{Choice of tail container} Although Marisa originally uses a sorted
+  tail container, recursion is agnostic to the tail container; more advanced containers such as approximate
+  \repair~\cite{pdt} and \fsst~\cite{fsst} can improve both space and query
+  time.
+
+  We limit our \csquared tries to the \fsst tail container because it captures almost all (within \fsstvsrepair) of the compression benefits of
+  approximate \repair with $12.8\times$--$21.6\times$ faster build times. 
+  %We omit the relevant
+  %data due to space constraints but will include it in the full \newmymarginpar{R3 D7}\newrev{(i.e., ArXiv)} version. 
+  As
+  shown in~\tabref{c2-full} in~\secref{experiments}, choosing \fsst as the tail
+  container always achieves a better compression ratio (up to \fsstmaxspacesavings) with minimal impact on the query time (.96-1.13$\times$)
+  over the sorted container.
+  %across all tested succinct tries.
+
+
+  %Furthermore, changing the tail container to \fsst improves query time by
+  %$1.12\times$ on average compared to sorted, because \bv operations in the
+  %topology \new{and/or intra-node lookup} make up the majority of the time in
+  %each query.
+
+   % \new{As a result, \compressionscheme limits the choice of tail container to
+  % \fsst to achieve a good balance between build time and compression ratio. We
+  % enable the user to choose to optimize more for build time or compression
+  % ratio by choosing the sorted or approximate \repair tail containers,
+  % respectively. We note that the gains in either dimension from other tail
+  % containers are small relative to \fsst.}
+
+\begin{figure}[t]
+    \begin{minipage}[h]{.23\textwidth}
+      \includegraphics[width=\textwidth,page=9,trim=14cm 7.6cm 15cm
+      7.5cm,clip]{visualization.pdf}
+        \caption{Suffix path compression for \csquared-FST and \csquared-CoCo.}
+        \label{fig:adaptive-compression-fst-example}
+    \end{minipage}
+    \hspace{0.1cm}
+    \begin{minipage}[h]{.23\textwidth}
+      \includegraphics[width=\textwidth,page=10,trim=14cm 7.8cm 14cm
+      7.2cm,clip]{visualization.pdf}
+        \caption{A \csquared-CoCo suffix path compression example. Stored keys:
+          cash, camp, cell, crash.} % Exact lookup for "cell" would fail.}
+        \label{fig:adaptive-compression-coco-example}
+    \end{minipage}
+\end{figure}
+
+
+\para{Integration with succinct tries} \rev{First, we enable \bvdesign-FST,
+  \bvdesign-CoCo, and \bvdesign-Marisa to access recursion and compressed tail
+  containers. We focus the discussion on %integration with
+  FST and CoCo, as these previously could not access unary-path compression.}
+
+\figref{adaptive-compression-fst-example} illustrates how we containerize the
+storage of suffix paths in FST. Specifically, each leaf node has an \islink bit indicating whether its
+suffix path is moved to the next container. A suffix link at position $i$ can thus be uniquely identified by
+\var{LinkId(i) = IsLink.rank$_1$(LeafID(i))}. When a lookup operation reaches a
+leaf node, we follow the \var{IsLink} bitvector to check the remaining suffixes
+in the container (if any).
+
+The integration with \rev{\bvdesign-CoCo} is \rev{similar}\mymarginpar{R2 D15}
+to \rev{\bvdesign-FST}, but \rev{CoCo requires special care for correctness: its
+  encoding schemes support only exact
+  lookup}.~\figref{adaptive-compression-coco-example} shows the issue. When
+looking up the string ``cell,'' the CoCo-trie would search for ``cel'' in the
+root \rev{because the root node has depth 3}. Since ``cel'' is not a key of the
+root, the lookup would fail, even if ``cell'' exists in the trie.
+% This error happens because all encoding schemes used by CoCo-trie only support
+% exact lookup, while the target entry could be a prefix of current key.
+% Given that keys are sorted within each macro node,
+Instead, we search for the lower bound of the target key rather than an exact match. If the lower bound is a prefix of the target key, we trace the link to
+check the remaining suffixes.
+
+\rev{\para{Adaptive recursion depth}} We enable all of the \rev{succinct} tries
+studied in this paper to access unary-path compression, but focus on the case of
+the Marisa trie and show \new{how to achieve better space-time tradeoffs by
+  combining recursion with \fsst.}
+
+Using recursion in the other tries (FST and CoCo) trades query performance for
+space savings. Therefore, we limit non-Marisa tries to no recursion in our evaluation,
+but expose it as a user option for different space-time tradeoffs. We will include the
+data on the effect of recursion in non-Marisa tries in the full version.
+
+\new{The original Marisa-trie exposes the maximum number of recursions as a
+  parameter to the user, but offers no per-dataset guidance on the space-query
+  tradeoff. As the original Marisa trie documentation notes~\cite{marisa-code}
+  and \secref{experiments} confirms, recursion has a serious negative impact on
+  query performance, so we only want to continue recursion when the space
+  reduction is significant.
+
+  We \emph{adaptively select} the number of recursion levels that achieve
+  the best time-space tradeoff per dataset. To balance
+  compression ratio against build/query time, we stop recursion when the space
+  savings would be less than some $\epsilon = 0.1$\mymarginpar{R1 D3, R2 D5}
+  (relative to trie size). However, the user can set $\epsilon$ to suit
+  their use case.}
+
+\mymarginpar{R1 W3, R1 D3, R2 D1, R2 D4} To efficiently determine the space
+usage at each level of recursion, we adopt \fsst's fast estimation scheme,
+encoding a subset of the data to approximate the compression ratio.  In
+practice, this estimate is within 10\% of the true compression ratio.
+
+
+\para{Other locality optimizations} \new{For the Marisa trie, compressed tail
+  containers degrade lookup performance in nodes with many links. To address
+  this issue, we store the branching label (i.e., the first label of each unary
+  path) in the label vector, enabling in-place intra-node search accelerated by
+  SIMD~\cite{pdt}.}
+
+\mymarginpar{R1 D3, R2 D1, R2 D3, R3 O4}\rev{To further improve locality, we
+  store unary paths smaller than a link in-place, avoiding the index overhead of
+  moving them to the next level. The number of bits needed to store a link
+  depends on the size of the trie (i.e., if a trie has $n$ nodes, we need
+  $\lg(n)$ bits to store each link). Short unary paths may be further
+  compressed by moving them to the next level, but the space savings is limited
+  by the short path length relative to the link cost.}
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:

@@ -1,0 +1,52 @@
+\begin{table}[t]
+
+\caption{
+Unary-path statistics for the two largest datasets.
+\#Branch denotes the number of branching edges. Given a path length $\ell$, we
+report the percentage of paths with lengths
+ $\ell=1$, $1<\ell \leq 3$, and  %\% $1<\ell<\ell_{\mathrm{cut}} = 3$), and
+$\ell> 3$.
+% correspond to the three unary-path categories defined in Section~\ref{sec:unary}.
+$\ell_{AVG}$ and $\ell_{MAX}$ denote the average and maximum
+lengths of compressible unary paths. %(links).
+}
+\centering
+\small
+\begin{tabular}{lrrrrrr}
+\toprule
+\textit{Dataset}
+& \textit{\# Branch}
+& \textit{$\ell = 1$}
+& \textit{$1 < \ell \leq 3$}
+& \textit{$\ell > 3$}
+& $\ell_{AVG}$
+& $\ell_{MAX}$ \\
+\midrule
+
+\wikidata~\cite{wiki-dataset}
+& 467K
+& 15.5\%
+& 0.4\%
+& 84.1\%
+& 271
+& 8676 \\
+
+\logdata~\cite{log-dataset}
+& 7,284K
+& 17.4\%
+& 3.8\%
+& 78.8\%
+& 65
+& 8196 \\
+
+\bottomrule
+\end{tabular}
+
+\label{tab:unary-wiki-log}
+
+\end{table}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../main"
+%%% End:

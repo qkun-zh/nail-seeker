@@ -1,0 +1,119 @@
+% %% update words and url
+% \begin{table}[t]
+%     \caption{
+%   Comparison of CoCo and CoCo$'$ (\queryshort, in ms for total queries) and space usage (\sizeshort,
+%   in \% of original dataset size) on the
+%   prefix-only datasets used in the original CoCo-trie
+%   evaluation.}
+%       \begin{center}
+%           \newcolumntype{P}{>{\raggedleft\arraybackslash}p{.24in}}
+%           \resizebox{\columnwidth}{!}{
+%            \newrev{  \begin{tabular}{l P P P P P P P P }
+%               \toprule
+
+%                & \multicolumn{2}{c}{\wordsstar}
+%                & \multicolumn{2}{c}{\urlstar}
+%                & \multicolumn{2}{c}{\dnastar}
+%                & \multicolumn{2}{c}{\xmlstar}\\
+
+%               \cmidrule(lr){2-3}
+%               \cmidrule(lr){4-5}
+%               \cmidrule(lr){6-7}
+%               \cmidrule(lr){8-9}
+
+%              \textit{Trie} &
+%              \textit{\queryshort} & \textit{\sizeshort} &
+%              \textit{\queryshort} & \textit{\sizeshort} &
+%              \textit{\queryshort} & \textit{\sizeshort} &
+%              \textit{\queryshort} & \textit{\sizeshort} \\
+
+%               \midrule
+
+%               % CoCo
+%               % & 2278 & 62.7\%
+%               % & 4216 & 42.4\%
+%               % & 654 & 24.0\%
+%               % & 1056 & 47.5\% \\
+
+%               % CoCo$'$
+%               % & 1536 & 54.8\%
+%               % & 2929 & 33.5\%
+%               % & 742 & 40.1\%
+%               % & 1020 & 29.6\% \\
+
+%                 CoCo
+%                 & 2278 & 62.7\%
+%                 & 4216 & 42.4\%
+%                 & 3052 & 24.0\%
+%                 & 7696 & 47.5\% \\
+
+%                 CoCo$'$
+%                 & 1536 & 54.8\%
+%                 & 2929 & 33.5\%
+%                 & 2344 & 73.2\%
+%                 & 3846 & 40.6\% \\
+
+%               \bottomrule
+%           \end{tabular}}
+%           }
+%       \end{center}
+
+%   \label{tab:coco-vs-coco-prime}
+%   \end{table}
+
+% %%% Local Variables:
+% %%% mode: latex
+% %%% TeX-master: "../main"
+% %%% End:
+
+
+
+  \begin{table}[t]
+      \caption{
+    Comparison of CoCo and CoCo$'$ (\queryshort, in ns per query) and space usage (\sizeshort,
+    in \% of original dataset size) on the
+    prefix-only datasets used in the original CoCo-trie
+    evaluation.}
+        \begin{center}
+            \newcolumntype{P}{>{\raggedleft\arraybackslash}p{.24in}}
+            \resizebox{\columnwidth}{!}{
+             \newrev{  \begin{tabular}{l P P P P P P P P }
+                \toprule
+
+                 & \multicolumn{2}{c}{\wordsstar}
+                 & \multicolumn{2}{c}{\urlstar}
+                 & \multicolumn{2}{c}{\dnastar}
+                 & \multicolumn{2}{c}{\xmlstar}\\
+
+                \cmidrule(lr){2-3}
+                \cmidrule(lr){4-5}
+                \cmidrule(lr){6-7}
+                \cmidrule(lr){8-9}
+
+               \textit{Trie} &
+               \textit{\queryshort} & \textit{\sizeshort} &
+               \textit{\queryshort} & \textit{\sizeshort} &
+               \textit{\queryshort} & \textit{\sizeshort} &
+               \textit{\queryshort} & \textit{\sizeshort} \\
+
+                \midrule
+
+                  CoCo
+                  & 315 & 62.7\%
+                  & 742 & 42.4\%
+                  & 655 & 24.0\%
+                  & 1039 & 47.5\% \\
+
+                  CoCo$'$
+                  & 380 & 54.8\%
+                  & 811 & 32.3\%
+                  & 743 & 40.1\%
+                  & 1011 & 29.6\% \\
+
+                \bottomrule
+            \end{tabular}}
+            }
+        \end{center}
+
+    \label{tab:coco-vs-coco-prime}
+    \end{table}

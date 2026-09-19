@@ -1,0 +1,354 @@
+\section{Preliminaries}\label{sec:preliminaries}
+
+We introduce the \rankop/\selectop primitives on \bvs and common succinct
+tree-encoding schemes, review four state-of-the-art succinct tries this paper
+builds upon, and summarize string compression schemes for the tail container.
+
+\subsection{Rank/Select Primitives}
+
+\Bvs are a fundamental building block of many succinct data structures. Succinct
+tree navigation relies on the \rankop and \selectop primitives of \bvs, which
+are defined as follows:
+\begin{itemize}
+  \item \proc{rank$_p$(i)}: return the number of pattern $p$'s in the first $i$ bits of the \bv.
+  \item \proc{select$_p$(i)}: return the end of the $i$-th occurrence of pattern $p$ in the \bv.
+\end{itemize}
+Different \bvs support different patterns for \rankop and \selectop. Common
+choices of $p$ include $1$, $0$ and $00$. For example, \proc{rank$_1$(i)}
+returns the number of occurrences of ``1'' in \rev{positions} [0, i).
+
+%Without any auxiliary data structures, the worst-case time complexities of the \rankop and
+% \selectop operations are both $O(n)$, where $n$ is the size of the bitvector.
+
+Index structures for \rankop and \selectop partition the \bv into fixed-sized
+(e.g., 512-bit) \rev{\emph{basic blocks}} and store partial results so far for
+each block from left-to-right~\cite{rank_select_1}. \rev{They also often include
+  \emph{secondary indices} on smaller fixed-size blocks within each basic block
+  for higher granularity and better performance.} These auxiliary structures
+reduce \newmymarginpar{R2 O3/D6}\newrev{the worst-case cost} of \rankop and
+\selectop to $O(1)$ with minimal (typically \rev{about} $5\%$) space overhead
+\cite{surf,rank_select_0,rank_select_1,rank_select_2,rank_select_3,sds_overview,ds2i,optimized_rank,terark_bv}.
+
+For the \rankop operation, the \defn{rank index} stores \mymarginpar{R2
+  D14}\rev{\defn{samples}, or exact accumulative ranks before each block (e.g.,
+  the number of 1s preceding each basic block), which enable fast exact
+  responses to \rankop queries.} Answering a \rev{\proc{rank$_p$(i)} query}
+involves combining the accumulative rank before the target block with the
+(computed) rank in the remainder up to position \proc{i}.
+
+\mymarginpar{Meta 1, R1 D1}\new{For example,~\figref{traditional-bv} illustrates
+  a worked example of a \\ \proc{rank$_1$(12)} query on a bitvector where the rank
+  index is built with block size 8. First, we look up the result of
+  \proc{rank$_1$(8) = 4} in $O(1)$ time in the rank index because position 8 is
+  the start of the basic block containing 12. Second, we calculate the remaining
+  instances of the pattern in the range 8 - 12 in the bitvector. The combined
+  result of the first and second step is 4 + 1 = 5, which is
+  \proc{rank$_1$(12)}.}
+
+\rev{The \selectop operation uses a \defn{select index} similar
+  to the aforementioned rank index, but \selectop is more challenging than
+  \rankop because a query may not know exactly which block is needed based on
+  the input. For example, with 8-bit basic blocks, bit 12 is always in the
+  second basic block, but the 12-th \emph{one bit} might be in the 100-th basic
+  block!
+
+  To support the \selectop operation, the \selectop index precomputes and stores
+  samples,\mymarginpar{R2 D14} or exact results of \selectop queries at regular
+  intervals (e.g., \proc{select$_p$(0)}, \proc{select$_p$(8)},
+  \proc{select$_p$(16)}, \ldots). Answering a \selectop query involves finding
+  the closest index entry to the left of the desired select query, then scanning
+  sequentially using that as a starting point.}  \mymarginpar{Meta 1, R1
+  D1}\new{For example,~\figref{traditional-bv} illustrates a worked example of a
+  \proc{select$_1$(14)} query on a bitvector where the select index is built
+  with block size 8. First, we look up the closest entry below, which is
+  \proc{select$_1$(8)} = 17, in $O(1)$ time. Therefore, we know that the result
+  of \proc{select$_1$(14)} must be to the right of \proc{select$_1$(8)}, so we
+  scan left to right starting from position 17 in the bitvector until we have
+  found 6 more bits (for 8 + 6 = 14 bits total).}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=.9\columnwidth,page=4,trim=7cm 6cm 9cm 6cm,clip]{visualization.pdf}
+    \caption{Examples of rank/select operations using the associated indices on
+      top of a bitvector.}
+    \label{fig:traditional-bv}
+\end{figure}
+
+\rev{\para{Succinct trie \bv structure} BP, LOUDS, and DFUDS are three popular
+  \bv-based succinct tree-encoding schemes \cite{jacobson1989space,
+    benoit2005representing}. They all use the topology bitvector to map each
+  tree element (\rev{i.e.,} nodes, edges, internal nodes, leaf nodes) to a
+  unique integer ID in the range of $[0, n-1]$, where $n$ is the number of such
+  elements in the tree. Depending on the encoding scheme, the topology may
+  support efficient tree operations \rev{(e.g., parent/child navigation)}
+  \rev{via \bv operations (e.g., rank/select).} Succinct trees encoded using
+  these schemes can be converted to tries by storing data associated with each
+  trie edge in a separate array, which is indexed using the edge IDs~\cite{surf,
+    marisa, pdt, coco_1}.
+
+  Efficient bitvector operations require auxiliary data structures which
+  separate the bitvector into two parts: the \defn{index}, which accelerates
+  bitvector operations, and the \defn{bit sequence}, which stores the content of
+  the bitvector (i.e. the trie topology). The index facilitates
+  \rankopnospace/\selectop operations essential to succinct trie navigation.}
+
+\subsection{LOUDS Encoding}\label{sec:louds}
+
+Level-Order Unary Degree Sequence (LOUDS) is a% a simple yet powerful
+\newmymarginpar{R2 O1/D4}\newrev{classical example of} a \bv-based succinct-tree
+encoding scheme~\cite{jacobson1989space}. Each tree node is encoded using the
+bit sequence $1^{m}0$ (\rev{i.e.}, $m$ 1's followed by a 0), where $m$ is the
+degree (\rev{i.e.}, the number of children) of the node. The encoding bits of
+each node are concatenated in level order to form the encoding \bv \var{bv} of
+the entire tree. With this encoding, each 1 bit corresponds to a parent-to-child
+edge, whereas each 0 bit marks the end of a node. We say a position $i$ belongs
+to a node $k$ if bit $i$ is part of node $k$'s encoding. The LOUDS encoding
+efficiently supports the following tree operations:
+\begin{itemize}
+    \item \proc{NodeID(i) = bv.rank$_0$(i)}, the LOUDS ID of the node to which position $i$ belongs.
+    \item \proc{EdgeID(i) = bv.rank$_1$(i)}, the LOUDS ID of the edge at position $i$ (Requirement: \proc{bv[i] == 1}).
+    \item \proc{LeafID(i) = \rev{bv}\mymarginpar{Meta 5, R2 D17}.rank$_{00}$(i)}, the LOUDS ID of the leaf node to which position $i$ belongs.
+    \item \proc{InnerID(i) = NodeID(i) - LeafID(i)}, the LOUDS ID of the inner node to which position $i$ belongs.
+    \item \proc{Child(i)} = \proc{bv.select$_0$(bv.rank$_1$(i+1)) + 1}, the position of the child node connected to the edge at position $i$.
+    \item \proc{Parent(i) = bv.select$_1$(bv.rank$_0$(i))}, the position of the parent of the node to which position $i$ belongs.
+\end{itemize}
+
+As illustrated in~\figref{louds-example}, encoding a trie using LOUDS involves
+the following steps: First, the \emph{topology} of the trie is encoded using the
+LOUDS \bv; Second, all the trie labels are concatenated in level order into a
+separate array. At query time, trie labels are uniquely indexed by edge IDs
+(because they are associated with trie edges), whereas keys are indexed by leaf
+IDs.
+
+\mymarginpar{Meta 1, R1 D1}\rev{Next, we will present an example of how to
+  traverse a LOUDS-encoded trie using the trie
+  in~\figref{louds-example}. Suppose we are navigating to the second child of
+  the root (i.e., from node 0 to node 2). We need to follow the second edge of
+  the root node, which is at position 1. From the aforementioned formula,
+  \proc{Child(1)} = \proc{bv.select$_0$(bv.rank$_1$(2))+1} =
+  \proc{bv.select$_0$(2)+1} = 6. Indeed, if we look at the LOUDS bitvector
+  in~\figref{louds-example}, the second child of the root starts at position 6.}
+
+Balanced Parentheses (BP)~\cite{jacobson1989space} and Depth-First Unary Degree
+Sequence (DFUDS)~\cite{benoit2005representing} are two popular alternatives to
+LOUDS with the same two-bits-per-node overhead, but they traverse the tree in
+different orders. Compared with LOUDS, they \rev{support}\mymarginpar{Meta 5, R1
+  D9} a broader range of tree operations, including computing subtree sizes or
+counting the number of leaf nodes to the left/right of a specific node. However,
+\rev{their functionality} comes at the cost of slower parent/child navigation
+\rev{compared to LOUDS due to their greater} complexity.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=.48\textwidth,page=1,trim=7cm 5cm 7cm 4.5cm,clip]{visualization.pdf}
+
+    \caption{LOUDS/LOUDS-Sparse encoding example. Stored keys: car, cat, suc, succ, sum, tie, tip, trie, try.}
+    \label{fig:louds-example}
+  \end{figure}
+
+\subsection{State-of-the-art Succinct Tries}\label{sec:existing-succinct-tries}
+
+\para{Fast Succinct Trie} The Fast Succinct Trie (FST)~\cite{surf} is a static
+succinct trie that combines the benefits of LOUDS-Sparse and LOUDS-Dense by
+leveraging both formats in different levels of the trie. Specifically, FST
+encodes the top levels of the trie, where nodes tend to have more branches and
+are more likely to be queried, using LOUDS-Dense, a representation that is fast
+and space efficient for nodes with dense branches. The rest of the trie, which
+tends to be colder and of lower average degree, is encoded with the more compact
+LOUDS-Sparse. \new{Due to space limitations, we omit the details of
+  LOUDS-Dense, %because LOUDS-Sparse is more similar to the schemes that we will focus on,
+  but we refer the reader to the original FST paper~\cite{surf} for the full
+  details.}
+
+LOUDS-Sparse uses 2 bits to encode each trie edge. The \\\proc{HasChild} bit of
+each edge indicates if this edge points to an internal node (1) or a leaf node
+(0). The \proc{Louds} bit of each edge indicates if this edge points to the
+first child of current node (1) or not (0), which is used to determine node
+boundaries. These two sets of encoding bits are respectively concatenated in
+level order to form two \bvs, \proc{HasChild} and \proc{Louds}. With
+LOUDS-Sparse, we have
+\begin{itemize}
+    \item \proc{Child(i) = Louds.select$_1$(HasChild.rank$_1$(i+1)+1)}.
+    \item \proc{Parent(i) = HasChild.select$_1$(Louds.rank$_1$(i+1)-1)}.
+    \item \proc{LeafID(i) = HasChild.rank$_0$(i)}.
+\end{itemize}
+
+\rev{Let us consider how to perform trie navigation in a LOUDS-sparse-encoded
+  trie using the example in~\figref{louds-example}. Suppose we are navigating
+  again to the second child of the root (also at position 1). \mymarginpar{Meta
+    1, R1 W1, R1 D1}From above, \proc{Child(1) =
+    Louds.select$_1$(HasChild.rank$_1$(2)\\+1) = Louds.select$_1$(3)} = 4. Indeed,
+  the second child of the root starts at position 4 in the \proc{Louds}
+  bitvector in the LOUDS-Sparse encoding.}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth,page=2,trim=7cm 5cm 9cm 3.5cm,clip]{visualization.pdf}
+    \caption{An example of a CoCo-trie obtained by collapsing sub-tries
+      surrounded by dashed boxes in~\figref{louds-example}.}
+    \label{fig:coco-example}
+\end{figure}
+
+\para{CoCo-Trie} The CoCo-trie \cite{coco_0, coco_1} is a recent
+state-of-the-art static succinct trie that achieves both low memory consumption
+and fast query performance. A CoCo-trie is constructed by first creating a
+regular trie $T$ and then adaptively selecting sub-tries of $T$ to collapse into
+macro-nodes. Keys in each collapsed macro-node are transformed to an increasing
+sequence of integer codes which is then encoded using a select pool of succinct
+integer encoding algorithms. The optimal set of sub-tries to collapse is
+computed using a \rev{bottom-up} dynamic-programming
+algorithm. % through a bottom-up traversal of the trie. % keeping track of the optimal sub-trie rooted at each node.
+
+\mymarginpar{Meta 1, R1 W1, R1 D1}\rev{~\figref{coco-example} illustrates the
+  CoCo-trie encoding of the example trie in~\figref{louds-example}. Since the
+  CoCo-trie uses LOUDS encoding, its trie navigation is done through
+  \rankop/\selectop operations on the bitvector as described in~\secref{louds}.}
+
+
+\para{Marisa Trie}\label{sec:marisa} The Marisa trie~\cite{marisa} is a
+LOUDS-encoded Patricia trie~\cite{partricia} that contracts unary paths into
+single concatenated labels. Unlike Patricia, Marisa improves space efficiency by
+recursively storing unary paths in multiple tries.
+
+\new{The upper subgraph of \figref{marisa-example} shows an example of Patricia,
+  where unary paths are contracted into a single node. To convert the trie to
+  LOUDS succinct form, two bitvectors are needed: the topology bitvector
+  \texttt{LOUDS} (\secref{louds}), and an additional bitvector (\texttt{IsLink})
+  which indicates if each edge is a regular edge (0) or a contracted edge
+  (1). Each contracted edge is uniquely indexed by a \var{LinkID} determined by
+  a \rankop operation on the \var{IsLink} \bv. The \texttt{Links} vector stores
+  \defn{links}, or references, to the concatenated labels on the contracted
+  edge. For example, bit 3 in \texttt{LOUDS} corresponds to bit 2 in
+  \texttt{IsLink} and link 0 in \texttt{Links} (``omp'').}
+
+\mymarginpar{R1 D7}\new{Marisa improves on Patricia by recursively storing unary
+  paths in secondary tries.} The recursion \rev{continues} until the number of
+tries reaches a \rev{preset limit}, at which point the outstanding unary paths
+are sorted, deduplicated and moved to a \rev{simple ``sorted'' tail container
+  (\secref{text-compression}).} \new{The lower subgraph of
+  \figref{marisa-example} shows a worked example of a Marisa trie with one
+  recursion. For readability, links between tries are expressed as leaf node IDs
+  in this example. Because the second trie only needs to support random access
+  but not lookup operations, the keys are stored in reversed form so that they
+  can be efficiently retrieved by reading the labels on a bottom-up path. For
+  example, to retrieve link 4's corresponding key, we start from leaf 4 of the
+  second trie, concatenate all the (reversed) labels on the leaf-to-root path
+  (`o' and `mp'), and obtain `omp'. In practice, links are implemented as leaf
+  node positions to avoid an additional \selectop operation. Finally, to
+  mitigate the cost of link tracing during lookups,
+  %because lookup operations at each node may potentially traverse all edges of that node, %which is very expensive because of link tracing,
+  Marisa uses a small piece of memory to cache frequently-taken paths.} % to speed up search.}
+% A typical Marisa trie first reduces key length through several levels of
+% recursions and then stores the outstanding unary paths in tail container.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth,page=11,trim=8.2cm 5.4cm 10cm 3.9cm,clip]{visualization.pdf}
+    \caption{
+    % Marisa example. Keys stored: candidate, camera, tie, tip, traffic, trie. DICT is either another Marisa trie or a tail container.\todo{update to illustrate recursion}
+      \rev{Examples of Patricia (top) and Marisa (bottom) with one
+        recursion. Keys stored: cache, camp, compare, compute. Unary paths in
+        the first Marisa trie are stored in the second Marisa trie in reversed
+        form: ehc, era, etu, pm, pmo. Links in the first Marisa trie are
+        indicated using dashed arrows, and the numbers alongside them indicate
+        their values (which in this example are leaf node IDs in the second
+        Marisa trie).}}
+    \label{fig:marisa-example}
+\end{figure}
+
+\new{The number of recursions in Marisa exposes a \emph{space-time tradeoff}, as
+  more recursions further compress the data at the cost of degraded search
+  performance and higher build times~\cite{marisa-code}.}
+
+\para{Path Decomposed Trie}
+The Path Decomposed Trie (PDT) \cite{pdt, pdt_theory, dynamic_pdt} is a
+DFUDS-encoded succinct trie. A PDT is obtained by transforming a regular trie
+through path decomposition \cite{path_decomp}: At each step, a root-to-leaf path
+is selected and contracted into a single node, and the subtrees dangling on the
+original path are converted to its child nodes. The procedure \rev{recurses} %is then performed
+ on the dangling subtrees.
+
+ The PDT achieves both significant memory reduction and competitive query
+ performance by compressing the contracted paths with an approximate version of
+ the \defn{\repair} \mymarginpar{Meta 1, R1 W1}\rev{text compression
+   algorithm~\cite{larsson2000off, repair}, which we will summarize in the next
+   subsection.}
+
+\new{\subsection{Text Compression
+     Algorithms}\label{sec:text-compression} \mymarginpar{R1
+     D7}\figref{repair-example} presents a worked example of how to compress a
+   set of strings with the sorted tail container, \repair algorithm, and
+   \fsst. Next, we summarize these algorithms.
+
+  \para{Sorted tail container} \mymarginpar{Meta 1}The sorted tail container is
+  the string container for the last Marisa trie on a recursion chain. \rev{It
+    overlaps two keys if one is a suffix of the other, and is particularly space
+    efficient for datasets with short and repetitive keys. To efficiently detect
+    possibilities of overlapping, it needs to reverse and sort all keys. Once
+    the strings have been sorted, construction takes linear time.} \new{The link
+    array which is used to retrieve keys from the container should also preserve
+    the original key ordering.}
+
+  \new{\para{Dictionary compression} Dictionary compression encodes common text patterns as small integer
+    codes, exemplified by the famous LZW algorithm~\cite{lzw}. The mapping
+    between patterns and integers is known as the \defn{dictionary}, and finding
+    a good dictionary is known to be a key challenge to such
+    algorithms~\cite{fsst}. In our work, we focus on two related algorithms that
+    support fast random access: re-pair~\cite{larsson2000off} and
+    FSST~\cite{fsst}.}
+
+  \para{Exact and approximate \repair} At a high level, the original \repair
+  algorithm~\cite{larsson2000off} replaces the most frequently-occurring
+  character pair with a new special character, proceeding in rounds. \rev{For
+    example, using special characters $\alpha$, $\beta$, $\gamma$ and $\delta$,
+    \repair may compress the string aabbaabb as $\alpha$bb$\alpha$bb ($\alpha$ =
+    aa) in the first pass, $\alpha\beta\alpha\beta$ ($\beta$ = bb) in the second
+    pass, $\gamma\gamma$ ($\gamma = \alpha\beta$) in the third pass and $\delta$
+    ($\delta = \gamma\gamma$) in the fourth pass.} \new{The dictionary is
+    expressed as a set of recursive rules of pairing, which can be flattened to
+    support constant-time decoding~\cite{pdt}, with a small space
+    overhead. \mymarginpar{R1 D4}Prior work shows that \repair compresses a
+    sequence $T$ of length $n$ over an alphabet of size $\sigma$ and $k$-th
+    order entropy $H_k$ to $O(H_k)$ bits.~\cite{navarro2008re,
+      ochoa2018repair}.}
+
+\begin{figure}[t]
+    \centering
+   % \begin{minipage}[h]{.48\textwidth}
+        \includegraphics[width=\columnwidth,page=14,trim=7.5cm 11.5cm 11.5cm 2cm,clip]{visualization.pdf}
+        \caption{
+        \rev{Examples of re-pair, FSST and sorted tail containers. Re-pair and FSST are both dictionary encoding methods (denoted with \texttt{Dict}) that replaces common text patterns with small integer codes. The sorted tail container (denoted with \texttt{Sorted}) overlaps suffix keys.}}
+        \label{fig:repair-example}
+  \end{figure}
+
+  % \para{Approximate \repair}
+
+  In practice, the PDT uses an \emph{approximate} version of the \repair
+   algorithm~\cite{repair} that accelerates build time by orders of magnitude compared to exact \repair by identifying and
+   replacing the top $k$ %(for some $k$)
+   most frequently-seen character pairs in
+   each round, rather than one at a time. To our knowledge, there is no
+   theoretical bound on how far the compression ratio of approximate
+   \repair is from exact \repair's, as it depends on the dataset.
+
+
+   \para{Fast Static Symbol Table} The Fast Static
+   Symbol \\Table (\fsst)~\cite{fsst} is similar to approximate \repair, but
+   optimizes for \emph{lightweight} compression (with linear build
+   times). Specifically, it restricts the size of the symbol table (i.e., the
+   list of special characters for replacement) to 256 entries and expands the
+   size of each replaced entry to substrings of 8 bytes (rather than two
+   characters in the original approximate \repair). \fsst further optimizes for
+   build time by first encoding
+   %running the compression algorithm on
+   a small sample (about 16KB) of the original dataset, and then using the
+   resulting symbol table to encode the entire dataset. FSST implements
+   hardware-specific optimizations, achieving extremely high compression and
+   decompression throughput. In practice, \fsst reduces the compression time by
+   over an order of magnitude compared to approximate \repair, while achieving
+   similar compression ratios. However, \newmymarginpar{R2 O1/D4}\newrev{no
+     theoretical space bound has been proved for FSST}.}
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:

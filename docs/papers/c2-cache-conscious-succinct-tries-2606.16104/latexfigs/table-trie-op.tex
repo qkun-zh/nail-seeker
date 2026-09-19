@@ -1,0 +1,34 @@
+\begin{table}[t]
+  \caption{Bitvector Operation Latency (ns) on XML Dataset (2.1M keys).
+  \textit{Speedup} = Baseline / \bvdesign. Bold entries indicate where \bvdesign
+  outperforms the baseline.}
+  \centering
+  \small
+ \newrev{ \begin{tabular}{l l r r r}
+  \toprule
+  \textit{Trie} & \textit{Operation} & \textit{Baseline (ns)} & \textit{\bvdesign (ns)} & \textit{Speedup}
+  \\
+  \midrule
+  \multirow{4}{*}{FST}
+    & \texttt{get}        & 1.48  & 1.52           & $0.98\times$ \\
+    & \texttt{leaf\_id}   & 10.32 & \textbf{1.45}  & $\mathbf{7.13\times}$ \\
+    & \texttt{degree}     & 1.09  & 2.75           & $0.40\times$ \\
+    & \texttt{child\_pos} & 48.62 & \textbf{17.09} & $\mathbf{2.84\times}$ \\
+  \midrule
+  \multirow{5}{*}{CoCo}
+    & \texttt{get}           & 0.64  & 1.06           & $0.60\times$ \\
+    & \texttt{leaf\_id}      & 2.10  & \textbf{1.72}  & $\mathbf{1.23\times}$ \\
+    & \texttt{internal\_id}  & 4.18  & \textbf{2.82}  & $\mathbf{1.48\times}$ \\
+    & \texttt{degree}        & 1.83  & 2.34           & $0.78\times$ \\
+    & \texttt{child\_pos}    & 22.60 & \textbf{17.87} & $\mathbf{1.26\times}$ \\
+  \midrule
+  \multirow{5}{*}{Marisa}
+    & \texttt{get}         & 0.98  & 1.48           & $0.66\times$ \\
+    & \texttt{link\_id}    & 8.20  & \textbf{1.23}  & $\mathbf{6.66\times}$ \\
+    & \texttt{leaf\_id}    & 9.00  & \textbf{1.38}  & $\mathbf{6.53\times}$ \\
+    & \texttt{child\_pos}  & 30.31 & \textbf{16.62} & $\mathbf{1.82\times}$ \\
+    & \texttt{parent\_pos} & 28.68 & \textbf{16.29} & $\mathbf{1.76\times}$ \\
+  \bottomrule
+  \end{tabular}}
+  \label{tab:trie-op}
+\end{table}
